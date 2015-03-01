@@ -1,7 +1,14 @@
 import urllib
 from lxml import html
+import MySQLdb
 
-pokemon = ['Mew', 'Skitty', 'Durant', 'Lapras', 'Rhyhorn']
+con = MySQLdb.connect('localhost', 'root', 'root', 'pokemon')
+
+cur = con.cursor()
+cur.execute("SELECT name FROM pokemon;")
+rows = cur.fetchall()
+
+pokemon = [ row[0] for row in rows ]
 
 def get_moves(name, move_name_index = 2):
     url = 'http://bulbapedia.bulbagarden.net/wiki/{}_(Pok%C3%A9mon)'.format(name)
@@ -14,11 +21,17 @@ def get_moves(name, move_name_index = 2):
 
 
 
-for i in pokemon:
+for name in pokemon:
 
-    moves = get_moves(i)
+    moves = get_moves(name)
     if len(moves) == 0:
-        moves = get_moves(i, 3)
+        moves = get_moves(name, 3)
 
-    print moves
-~                  
+    cur = con.cursor()
+    for move in moves:
+        print move
+        cur.execute("INSERT INTO moves (name) VALUES (%s);", (move))
+        cur.execute("INSERT INTO learnset (pokemon, move) VALUES (%s, %s);", (name, move))
+        con.commit()
+
+con.close()
